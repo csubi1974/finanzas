@@ -1,6 +1,8 @@
 {
   "name": "finanzas-app",
+  "private": true,
   "version": "1.0.0",
+  "type": "module",
   "description": "Aplicación de gestión de finanzas personales con Supabase",
   "main": "index.js",
   "scripts": {
