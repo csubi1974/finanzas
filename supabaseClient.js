@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Configuración usando variables de entorno para deployment
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key'
 
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
