@@ -68,20 +68,29 @@ cd finanzas
 npm install
 ```
 
-### 3. Configurar Supabase
+### 3. Configurar Variables de Entorno
 
 1. Crea un proyecto en [Supabase](https://supabase.com)
 2. Copia tu URL y clave anónima del proyecto
-3. Crea el archivo `supabaseClient.js` en la raíz del proyecto:
+3. Crea un archivo `.env` en la raíz del proyecto basado en `.env.example`:
 
-```javascript
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = 'TU_SUPABASE_URL'
-const supabaseKey = 'TU_SUPABASE_ANON_KEY'
-
-export const supabase = createClient(supabaseUrl, supabaseKey)
+```bash
+# Copia el archivo de ejemplo
+cp .env.example .env
 ```
+
+4. Edita el archivo `.env` con tus credenciales reales:
+
+```env
+# OpenAI API Key para análisis financiero con IA
+VITE_OPENAI_API_KEY=tu_api_key_de_openai_aqui
+
+# Configuración de Supabase
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu_clave_anonima_de_supabase
+```
+
+**⚠️ IMPORTANTE**: Para deployment en Vercel, consulta el archivo `CONFIGURACION_VERCEL.md` para instrucciones específicas sobre cómo configurar las variables de entorno en la plataforma.
 
 ### 4. Configurar la base de datos
 
