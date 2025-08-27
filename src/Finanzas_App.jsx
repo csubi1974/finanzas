@@ -41,7 +41,8 @@ function App() {
     type: 'expense',
     amount: '',
     category: '',
-    description: ''
+    description: '',
+    date: new Date().toISOString().split('T')[0]
   });
   
   // Estados para edición de transacciones
@@ -248,7 +249,7 @@ function App() {
             amount: 500000,
             category: 'Salario',
             description: 'Sueldo mensual',
-            date: new Date().toISOString().split('T')[0],
+            date: newTransaction.date,
             created_at: new Date().toISOString()
           },
           {
@@ -332,7 +333,7 @@ function App() {
           amount: parseFloat(newTransaction.amount),
           category: newTransaction.category,
           description: newTransaction.description || null,
-          date: new Date().toISOString().split('T')[0]
+          date: newTransaction.date
         }])
         .select();
 
@@ -352,7 +353,8 @@ function App() {
         type: 'expense',
         amount: '',
         category: '',
-        description: ''
+        description: '',
+        date: new Date().toISOString().split('T')[0]
       });
       setShowAddTransaction(false);
       setShowAddCategoryInModal(false);
@@ -1428,6 +1430,21 @@ function App() {
                 onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
                 className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Descripción opcional"
+              />
+            </div>
+
+            {/* Date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha *</label>
+              <input
+                type="date"
+                value={newTransaction.date}
+                onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
+                style={{
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'textfield'
+                }}
               />
             </div>
 
