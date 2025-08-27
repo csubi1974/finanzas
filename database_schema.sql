@@ -1,6 +1,7 @@
 -- Crear tabla de transacciones
 CREATE TABLE IF NOT EXISTS transactions (
   id BIGSERIAL PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   type VARCHAR(10) NOT NULL CHECK (type IN ('income', 'expense')),
   category VARCHAR(50) NOT NULL,
   amount DECIMAL(10,2) NOT NULL,
@@ -13,21 +14,28 @@ CREATE TABLE IF NOT EXISTS transactions (
 -- Crear tabla de balance del usuario
 CREATE TABLE IF NOT EXISTS user_balance (
   id BIGSERIAL PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
   balance DECIMAL(10,2) NOT NULL DEFAULT 0,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- Insertar balance inicial si no existe
-INSERT INTO user_balance (id, balance) 
-SELECT 1, 0 
-WHERE NOT EXISTS (SELECT 1 FROM user_balance WHERE id = 1)
-ON CONFLICT (id) DO NOTHING;
+-- El balance inicial se creará automáticamente para cada usuario mediante trigger
 
 -- Función para actualizar el balance automáticamente
 CREATE OR REPLACE FUNCTION update_balance()
 RETURNS TRIGGER AS $$
+DECLARE
+  target_user_id UUID;
 BEGIN
-  -- Calcular el nuevo balance basado en todas las transacciones
+  -- Obtener el user_id de la transacción
+  target_user_id := COALESCE(NEW.user_id, OLD.user_id);
+  
+  -- Crear balance si no existe para este usuario
+  INSERT INTO user_balance (user_id, balance)
+  VALUES (target_user_id, 0)
+  ON CONFLICT (user_id) DO NOTHING;
+  
+  -- Calcular el nuevo balance basado en todas las transacciones del usuario
   UPDATE user_balance 
   SET balance = (
     SELECT COALESCE(
@@ -35,9 +43,10 @@ BEGIN
       0
     )
     FROM transactions
+    WHERE user_id = target_user_id
   ),
   updated_at = NOW()
-  WHERE id = 1; -- Especificar qué fila actualizar
+  WHERE user_id = target_user_id;
   
   RETURN COALESCE(NEW, OLD);
 END;
@@ -70,6 +79,7 @@ ALTER TABLE user_balance ENABLE ROW LEVEL SECURITY;
 -- Crear tabla de metas de ahorro
 CREATE TABLE IF NOT EXISTS savings_goals (
   id BIGSERIAL PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   name VARCHAR(100) NOT NULL,
   target_amount DECIMAL(10,2) NOT NULL,
   current_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -137,18 +147,51 @@ CREATE TRIGGER update_goal_on_contribution_delete
 ALTER TABLE savings_goals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE goal_contributions ENABLE ROW LEVEL SECURITY;
 
--- Crear políticas para permitir acceso público (puedes modificar esto según tus necesidades)
-CREATE POLICY "Allow all operations on transactions" ON transactions
-  FOR ALL USING (true);
+-- Crear políticas RLS para acceso por usuario autenticado
+CREATE POLICY "Users can view their own transactions" ON transactions
+  FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Allow all operations on user_balance" ON user_balance
-  FOR ALL USING (true);
+CREATE POLICY "Users can insert their own transactions" ON transactions
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Allow all operations on savings_goals" ON savings_goals
-  FOR ALL USING (true);
+CREATE POLICY "Users can update their own transactions" ON transactions
+  FOR UPDATE USING (auth.uid() = user_id);
 
-CREATE POLICY "Allow all operations on goal_contributions" ON goal_contributions
-  FOR ALL USING (true);
+CREATE POLICY "Users can delete their own transactions" ON transactions
+  FOR DELETE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can view their own balance" ON user_balance
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own balance" ON user_balance
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own balance" ON user_balance
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can view their own savings goals" ON savings_goals
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own savings goals" ON savings_goals
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own savings goals" ON savings_goals
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own savings goals" ON savings_goals
+  FOR DELETE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can view their own goal contributions" ON goal_contributions
+  FOR SELECT USING (auth.uid() = (SELECT user_id FROM savings_goals WHERE id = goal_id));
+
+CREATE POLICY "Users can insert their own goal contributions" ON goal_contributions
+  FOR INSERT WITH CHECK (auth.uid() = (SELECT user_id FROM savings_goals WHERE id = goal_id));
+
+CREATE POLICY "Users can update their own goal contributions" ON goal_contributions
+  FOR UPDATE USING (auth.uid() = (SELECT user_id FROM savings_goals WHERE id = goal_id));
+
+CREATE POLICY "Users can delete their own goal contributions" ON goal_contributions
+  FOR DELETE USING (auth.uid() = (SELECT user_id FROM savings_goals WHERE id = goal_id));
 
 -- Create custom_categories table
 CREATE TABLE custom_categories (

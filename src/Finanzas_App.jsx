@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import AuthComponent from './AuthComponent';
+import LoadingSpinner from './LoadingSpinner';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -27,6 +29,11 @@ ChartJS.register(
 );
 
 function App() {
+  // Estados de autenticación
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  
+  // Estados existentes
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -36,7 +43,7 @@ function App() {
   const [showValues, setShowValues] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false); // Estado para mostrar/ocultar valores
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [newTransaction, setNewTransaction] = useState({
     type: 'expense',
     amount: '',
@@ -157,10 +164,34 @@ function App() {
     }
   };
 
-  // Load initial data
+  // Verificar autenticación al cargar
   useEffect(() => {
-    loadInitialData();
+    checkAuth();
+    
+    // Escuchar cambios en la autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+      
+      if (session?.user) {
+        loadInitialData();
+      } else {
+        // Limpiar datos cuando el usuario se desconecta
+        setTransactions([]);
+        setBalance(0);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  // Cargar datos cuando el usuario esté autenticado
+  useEffect(() => {
+    if (user) {
+      loadInitialData();
+    }
+  }, [user]);
 
   const loadInitialData = async () => {
     try {
@@ -181,13 +212,36 @@ function App() {
     }
   };
 
+  const checkAuth = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+    } catch (error) {
+      console.error('Error checking auth:', error);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error signing out:', error);
+      setError('Error al cerrar sesión');
+    }
+  };
+
   const fetchCustomCategories = async () => {
+    if (!user) return;
+    
     try {
       console.log('Cargando categorías personalizadas...');
       const { data, error } = await supabase
         .from('custom_categories')
         .select('*')
-        .is('user_id', null); // Filtrar por user_id NULL
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error al cargar categorías:', error);
@@ -224,15 +278,23 @@ function App() {
   };
 
   const fetchTransactions = async () => {
+    if (!user) {
+      setTransactions([]);
+      setBalance(0);
+      return;
+    }
+    
     try {
       console.log('Intentando conectar con Supabase...');
       console.log('URL:', import.meta.env.VITE_SUPABASE_URL);
       console.log('Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+      console.log('User ID:', user.id);
       
-      // Intentar conectar con Supabase
+      // Intentar conectar con Supabase filtrando por user_id
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       console.log('Respuesta de Supabase:', { data, error });
@@ -270,6 +332,11 @@ function App() {
   };
 
   const addTransaction = async () => {
+    if (!user) {
+      setError('Debes estar autenticado para agregar transacciones');
+      return;
+    }
+    
     if (!newTransaction.amount || !newTransaction.category) {
       setError('Por favor completa todos los campos requeridos');
       return;
@@ -283,7 +350,8 @@ function App() {
           amount: parseFloat(newTransaction.amount),
           category: newTransaction.category,
           description: newTransaction.description || null,
-          date: newTransaction.date
+          date: newTransaction.date,
+          user_id: user.id
         }])
         .select();
 
@@ -319,11 +387,17 @@ function App() {
 
   // Función para eliminar transacción
   const deleteTransaction = async (transactionId) => {
+    if (!user) {
+      setError('Debes estar autenticado para eliminar transacciones');
+      return;
+    }
+    
     try {
       const { error } = await supabase
         .from('transactions')
         .delete()
-        .eq('id', transactionId);
+        .eq('id', transactionId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -350,6 +424,11 @@ function App() {
 
 
   const addCustomCategory = async () => {
+    if (!user) {
+      setError('Debes estar autenticado para agregar categorías');
+      return;
+    }
+    
     if (!newCategoryName.trim()) {
       setError('Por favor ingresa un nombre para la categoría');
       return;
@@ -361,14 +440,15 @@ function App() {
     }
 
     try {
-      // Guardar en la base de datos sin user_id (será NULL)
+      // Guardar en la base de datos con user_id
       const { data, error } = await supabase
         .from('custom_categories')
         .insert([{
           name: newCategoryName.trim(),
           is_income: newCategoryType === 'income',
           color: '#3B82F6',
-          icon: newCategoryType === 'income' ? '💰' : '💸'
+          icon: newCategoryType === 'income' ? '💰' : '💸',
+          user_id: user.id
         }])
         .select();
 
@@ -395,6 +475,11 @@ function App() {
   };
 
   const deleteCustomCategory = async (type, categoryName) => {
+    if (!user) {
+      setError('Debes estar autenticado para eliminar categorías');
+      return;
+    }
+    
     const defaultCategories = {
       expense: ['Alimentación', 'Transporte', 'Entretenimiento', 'Salud', 'Educación', 'Hogar', 'Ropa', 'Otros'],
       income: ['Salario', 'Freelance', 'Inversiones', 'Bonos', 'Otros']
@@ -420,7 +505,7 @@ function App() {
         .delete()
         .eq('name', categoryName)
         .eq('is_income', type === 'income')
-        .is('user_id', null); // Filtrar por user_id NULL
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error al eliminar categoría:', error);
@@ -453,14 +538,15 @@ function App() {
     }
 
     try {
-      // Guardar en la base de datos sin user_id (será NULL)
+      // Guardar en la base de datos con user_id
       const { data, error } = await supabase
         .from('custom_categories')
         .insert([{
           name: newCategoryName.trim(),
           is_income: newTransaction.type === 'income',
           color: '#3B82F6',
-          icon: newTransaction.type === 'income' ? '💰' : '💸'
+          icon: newTransaction.type === 'income' ? '💰' : '💸',
+          user_id: user.id
         }])
         .select();
 
@@ -1164,13 +1250,25 @@ function App() {
     </div>
   );
 
+  // Mostrar spinner de autenticación
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <LoadingSpinner message="Verificando autenticación..." size="large" />
+      </div>
+    );
+  }
+
+  // Mostrar componente de autenticación si no hay usuario
+  if (!user) {
+    return <AuthComponent />;
+  }
+
+  // Mostrar spinner de carga de datos
   if (loading) {
     return (
       <div className="max-w-md mx-auto bg-gray-50 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="text-gray-600 mt-4">Cargando tus finanzas...</p>
-        </div>
+        <LoadingSpinner message="Cargando datos financieros..." size="medium" />
       </div>
     );
   }
@@ -1180,7 +1278,10 @@ function App() {
       {/* Header */}
       <div className="bg-white shadow-sm p-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">💰 Mis Finanzas</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">💰 Mis Finanzas</h1>
+            <p className="text-sm text-blue-600">👤 {user.email}</p>
+          </div>
           
           <div className="flex items-center space-x-2">
             {/* PWA Install Button */}
@@ -1193,6 +1294,14 @@ function App() {
                 <span className="text-xl">📱</span>
               </button>
             )}
+            {/* Sign Out Button */}
+            <button
+              onClick={handleSignOut}
+              className="p-2 text-red-600 hover:text-red-800 transition-colors"
+              title="Cerrar sesión"
+            >
+              <span className="text-xl">🚪</span>
+            </button>
           </div>
         </div>
       </div>
