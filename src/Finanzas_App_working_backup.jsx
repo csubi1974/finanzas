@@ -43,9 +43,6 @@ function App() {
     category: '',
     description: ''
   });
-  
-  // Estados para edición de transacciones
-
 
   // Función para formatear montos en pesos chilenos
   const formatCLP = (amount) => {
@@ -58,55 +55,6 @@ function App() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount);
-  };
-
-  // Función para calcular el balance mensual
-  const getMonthlyBalance = () => {
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-    
-    const monthlyTransactions = transactions.filter(transaction => {
-      const transactionDate = new Date(transaction.date || transaction.created_at);
-      return transactionDate.getMonth() === currentMonth && 
-             transactionDate.getFullYear() === currentYear;
-    });
-    
-    const monthlyIncome = monthlyTransactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    
-    const monthlyExpenses = monthlyTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    
-    return {
-      balance: monthlyIncome - monthlyExpenses,
-      income: monthlyIncome,
-      expenses: monthlyExpenses
-    };
-  };
-
-  // Obtener datos del mes actual
-  const monthlyData = getMonthlyBalance();
-  
-  // Función para obtener el nombre del mes actual
-  const getCurrentMonthName = () => {
-    const months = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
-    const currentDate = new Date();
-    return months[currentDate.getMonth()];
-  };
-  
-  // Función para obtener la fecha completa actual
-  const getCurrentDate = () => {
-    const currentDate = new Date();
-    const day = currentDate.getDate();
-    const month = getCurrentMonthName();
-    const year = currentDate.getFullYear();
-    return `${day} de ${month} ${year}`;
   };
   const [showAddCategoryInModal, setShowAddCategoryInModal] = useState(false);
 
@@ -164,114 +112,23 @@ function App() {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      console.log('Iniciando carga de datos...');
       await fetchTransactions();
-      await fetchCustomCategories();
-      console.log('Carga de datos completada');
     } catch (error) {
       console.error('Error loading initial data:', error);
       setError('Error al cargar los datos');
-      // Asegurar que la app funcione sin datos
-      setTransactions([]);
-      setBalance(0);
     } finally {
-      console.log('Finalizando estado de carga');
       setLoading(false);
-    }
-  };
-
-  const fetchCustomCategories = async () => {
-    try {
-      console.log('Cargando categorías personalizadas...');
-      const { data, error } = await supabase
-        .from('custom_categories')
-        .select('*')
-        .is('user_id', null); // Filtrar por user_id NULL
-
-      if (error) {
-        console.error('Error al cargar categorías:', error);
-        return;
-      }
-
-      if (data && data.length > 0) {
-        const expenseCategories = ['Alimentación', 'Transporte', 'Entretenimiento', 'Salud', 'Educación', 'Hogar', 'Ropa', 'Otros'];
-        const incomeCategories = ['Salario', 'Freelance', 'Inversiones', 'Bonos', 'Otros'];
-
-        // Agregar categorías personalizadas a las categorías por defecto
-        data.forEach(category => {
-          if (category.is_income) {
-            if (!incomeCategories.includes(category.name)) {
-              incomeCategories.push(category.name);
-            }
-          } else {
-            if (!expenseCategories.includes(category.name)) {
-              expenseCategories.push(category.name);
-            }
-          }
-        });
-
-        setCustomCategories({
-          expense: expenseCategories,
-          income: incomeCategories
-        });
-
-        console.log('Categorías personalizadas cargadas:', data.length);
-      }
-    } catch (error) {
-      console.error('Error fetching custom categories:', error);
     }
   };
 
   const fetchTransactions = async () => {
     try {
-      console.log('Intentando conectar con Supabase...');
-      console.log('URL:', import.meta.env.VITE_SUPABASE_URL);
-      console.log('Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
-      
-      // Intentar conectar con Supabase
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('Respuesta de Supabase:', { data, error });
-
-      if (error) {
-        console.error('Error de Supabase:', error);
-        console.log('Usando datos locales temporalmente...');
-        
-        // Usar datos de ejemplo si Supabase falla
-        const sampleData = [
-          {
-            id: 1,
-            type: 'income',
-            amount: 500000,
-            category: 'Salario',
-            description: 'Sueldo mensual',
-            date: new Date().toISOString().split('T')[0],
-            created_at: new Date().toISOString()
-          },
-          {
-            id: 2,
-            type: 'expense',
-            amount: 50000,
-            category: 'Alimentación',
-            description: 'Supermercado',
-            date: new Date().toISOString().split('T')[0],
-            created_at: new Date().toISOString()
-          }
-        ];
-        
-        setTransactions(sampleData);
-        
-        // Calculate balance
-        const totalIncome = sampleData.filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0);
-        const totalExpenses = sampleData.filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0);
-        setBalance(totalIncome - totalExpenses);
-        
-        setError('Usando datos de ejemplo - Verifica la conexión con Supabase');
-        return;
-      }
+      if (error) throw error;
 
       setTransactions(data || []);
       
@@ -279,42 +136,9 @@ function App() {
       const totalIncome = (data || []).filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0);
       const totalExpenses = (data || []).filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0);
       setBalance(totalIncome - totalExpenses);
-      
-      console.log('Datos cargados exitosamente:', { transacciones: data?.length || 0, balance: totalIncome - totalExpenses });
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      console.log('Usando datos locales por error de conexión...');
-      
-      // Usar datos de ejemplo si hay error de conexión
-      const sampleData = [
-        {
-          id: 1,
-          type: 'income',
-          amount: 500000,
-          category: 'Salario',
-          description: 'Sueldo mensual',
-          date: new Date().toISOString().split('T')[0],
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 2,
-          type: 'expense',
-          amount: 50000,
-          category: 'Alimentación',
-          description: 'Supermercado',
-          date: new Date().toISOString().split('T')[0],
-          created_at: new Date().toISOString()
-        }
-      ];
-      
-      setTransactions(sampleData);
-      
-      // Calculate balance
-      const totalIncome = sampleData.filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0);
-      const totalExpenses = sampleData.filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0);
-      setBalance(totalIncome - totalExpenses);
-      
-      setError(`Usando datos de ejemplo - Error de conexión: ${error.message}`);
+      setError('Error al cargar las transacciones');
     }
   };
 
@@ -363,41 +187,7 @@ function App() {
     }
   };
 
-
-
-  // Función para eliminar transacción
-  const deleteTransaction = async (transactionId) => {
-    try {
-      const { error } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('id', transactionId);
-
-      if (error) throw error;
-
-      // Encontrar la transacción a eliminar para ajustar el balance
-      const transactionToDelete = transactions.find(t => t.id === transactionId);
-      
-      // Actualizar transacciones
-      setTransactions(prev => prev.filter(t => t.id !== transactionId));
-      
-      // Actualizar balance
-      if (transactionToDelete.type === 'income') {
-        setBalance(prev => prev - parseFloat(transactionToDelete.amount));
-      } else {
-        setBalance(prev => prev + parseFloat(transactionToDelete.amount));
-      }
-
-      setError(null);
-    } catch (error) {
-      console.error('Error deleting transaction:', error);
-      setError('Error al eliminar la transacción');
-    }
-  };
-
-
-
-  const addCustomCategory = async () => {
+  const addCustomCategory = () => {
     if (!newCategoryName.trim()) {
       setError('Por favor ingresa un nombre para la categoría');
       return;
@@ -408,41 +198,17 @@ function App() {
       return;
     }
 
-    try {
-      // Guardar en la base de datos sin user_id (será NULL)
-      const { data, error } = await supabase
-        .from('custom_categories')
-        .insert([{
-          name: newCategoryName.trim(),
-          is_income: newCategoryType === 'income',
-          color: '#3B82F6',
-          icon: newCategoryType === 'income' ? '💰' : '💸'
-        }])
-        .select();
+    setCustomCategories(prev => ({
+      ...prev,
+      [newCategoryType]: [...prev[newCategoryType], newCategoryName.trim()]
+    }));
 
-      if (error) {
-        console.error('Error al guardar categoría:', error);
-        setError('Error al guardar la categoría en la base de datos: ' + error.message);
-        return;
-      }
-
-      // Actualizar estado local
-      setCustomCategories(prev => ({
-        ...prev,
-        [newCategoryType]: [...prev[newCategoryType], newCategoryName.trim()]
-      }));
-
-      setNewCategoryName('');
-      setShowCategoryModal(false);
-      setError(null);
-      console.log('Categoría guardada exitosamente:', data[0]);
-    } catch (error) {
-      console.error('Error adding custom category:', error);
-      setError('Error al agregar la categoría');
-    }
+    setNewCategoryName('');
+    setShowCategoryModal(false);
+    setError(null);
   };
 
-  const deleteCustomCategory = async (type, categoryName) => {
+  const deleteCustomCategory = (type, categoryName) => {
     const defaultCategories = {
       expense: ['Alimentación', 'Transporte', 'Entretenimiento', 'Salud', 'Educación', 'Hogar', 'Ropa', 'Otros'],
       income: ['Salario', 'Freelance', 'Inversiones', 'Bonos', 'Otros']
@@ -454,42 +220,13 @@ function App() {
       return;
     }
 
-    // Verificar si hay transacciones asociadas a esta categoría
-    const hasTransactions = transactions.some(t => t.category === categoryName);
-    if (hasTransactions) {
-      setError('No se puede eliminar esta categoría porque tiene transacciones asociadas');
-      return;
-    }
-
-    try {
-      // Eliminar de la base de datos
-      const { error } = await supabase
-        .from('custom_categories')
-        .delete()
-        .eq('name', categoryName)
-        .eq('is_income', type === 'income')
-        .is('user_id', null); // Filtrar por user_id NULL
-
-      if (error) {
-        console.error('Error al eliminar categoría:', error);
-        setError('Error al eliminar la categoría de la base de datos: ' + error.message);
-        return;
-      }
-
-      // Actualizar estado local
-      setCustomCategories(prev => ({
-        ...prev,
-        [type]: prev[type].filter(cat => cat !== categoryName)
-      }));
-      setError(null);
-      console.log('Categoría eliminada exitosamente:', categoryName);
-    } catch (error) {
-      console.error('Error deleting custom category:', error);
-      setError('Error al eliminar la categoría');
-    }
+    setCustomCategories(prev => ({
+      ...prev,
+      [type]: prev[type].filter(cat => cat !== categoryName)
+    }));
   };
 
-  const addQuickCategory = async () => {
+  const addQuickCategory = () => {
     if (!newCategoryName.trim()) {
       setError('Por favor ingresa un nombre para la categoría');
       return;
@@ -500,39 +237,15 @@ function App() {
       return;
     }
 
-    try {
-      // Guardar en la base de datos sin user_id (será NULL)
-      const { data, error } = await supabase
-        .from('custom_categories')
-        .insert([{
-          name: newCategoryName.trim(),
-          is_income: newTransaction.type === 'income',
-          color: '#3B82F6',
-          icon: newTransaction.type === 'income' ? '💰' : '💸'
-        }])
-        .select();
+    setCustomCategories(prev => ({
+      ...prev,
+      [newTransaction.type]: [...prev[newTransaction.type], newCategoryName.trim()]
+    }));
 
-      if (error) {
-        console.error('Error al guardar categoría:', error);
-        setError('Error al guardar la categoría en la base de datos: ' + error.message);
-        return;
-      }
-
-      // Actualizar estado local
-      setCustomCategories(prev => ({
-        ...prev,
-        [newTransaction.type]: [...prev[newTransaction.type], newCategoryName.trim()]
-      }));
-
-      setNewTransaction({...newTransaction, category: newCategoryName.trim()});
-      setNewCategoryName('');
-      setShowAddCategoryInModal(false);
-      setError(null);
-      console.log('Categoría rápida guardada exitosamente:', data[0]);
-    } catch (error) {
-      console.error('Error adding quick category:', error);
-      setError('Error al agregar la categoría');
-    }
+    setNewTransaction({...newTransaction, category: newCategoryName.trim()});
+    setNewCategoryName('');
+    setShowAddCategoryInModal(false);
+    setError(null);
   };
 
   // Función para análisis con IA
@@ -638,23 +351,23 @@ function App() {
     const salaryTransactions = transactions.filter(t => 
       t.type === 'income' && 
       t.category === 'Salario' &&
-      new Date(t.date || t.created_at).getMonth() === currentMonth &&
-      new Date(t.date || t.created_at).getFullYear() === currentYear
-    ).sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at));
+      new Date(t.created_at).getMonth() === currentMonth &&
+      new Date(t.created_at).getFullYear() === currentYear
+    ).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     
-    const lastSalaryDate = salaryTransactions.length > 0 ? new Date(salaryTransactions[0].date || salaryTransactions[0].created_at) : null;
+    const lastSalaryDate = salaryTransactions.length > 0 ? new Date(salaryTransactions[0].created_at) : null;
     
     // Gastos desde el último salario
     const expensesSinceSalary = lastSalaryDate ? 
       transactions.filter(t => 
         t.type === 'expense' && 
-        new Date(t.date || t.created_at) >= lastSalaryDate
+        new Date(t.created_at) >= lastSalaryDate
       ) : [];
     
     // Evolución diaria de gastos desde salario
     const dailyExpenses = {};
     expensesSinceSalary.forEach(t => {
-      const date = new Date(t.date || t.created_at).toISOString().split('T')[0];
+      const date = new Date(t.created_at).toISOString().split('T')[0];
       dailyExpenses[date] = (dailyExpenses[date] || 0) + parseFloat(t.amount);
     });
     
@@ -673,7 +386,7 @@ function App() {
     }
     
     transactions.forEach(t => {
-      const date = new Date(t.date || t.created_at);
+      const date = new Date(t.created_at);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       if (monthlyData[monthKey]) {
         monthlyData[monthKey][t.type === 'income' ? 'income' : 'expenses'] += parseFloat(t.amount);
@@ -866,8 +579,6 @@ function App() {
             </div>
           </div>
         )}
-
-
         
         {/* Distribución por categorías */}
         {categoryLabels.length > 0 && (
@@ -977,7 +688,7 @@ function App() {
                 <span className="text-gray-600">Promedio Gasto Diario:</span>
                 <span className="font-semibold text-gray-800">
                   {transactions.filter(t => t.type === 'expense').length > 0 ? 
-                    formatCLP(totalExpenses / Math.max(1, Math.ceil((new Date() - new Date(Math.min(...transactions.filter(t => t.type === 'expense').map(t => new Date(t.date || t.created_at))))) / (1000 * 60 * 60 * 24)))) :
+                    formatCLP(totalExpenses / Math.max(1, Math.ceil((new Date() - new Date(Math.min(...transactions.filter(t => t.type === 'expense').map(t => new Date(t.created_at))))) / (1000 * 60 * 60 * 24)))) :
                     formatCLP(0)
                   }
                 </span>
@@ -994,7 +705,7 @@ function App() {
       {/* Balance Card */}
       <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl">
         <div className="flex justify-between items-center mb-2">
-          <h2 className="text-base font-medium opacity-90">Balance Mensual - {getCurrentDate()}</h2>
+          <h2 className="text-lg font-medium opacity-90">Balance Total</h2>
           <div className="flex space-x-2">
             <button
               onClick={() => setShowAIModal(true)}
@@ -1023,15 +734,15 @@ function App() {
             </button>
           </div>
         </div>
-        <p className="text-3xl font-bold mb-4">{formatCLP(monthlyData.balance)}</p>
+        <p className="text-3xl font-bold mb-4">{formatCLP(balance)}</p>
         <div className="flex justify-between text-sm">
           <div>
-            <p className="opacity-80">Ingresos del mes</p>
-            <p className="font-semibold text-green-200">+{formatCLP(monthlyData.income)}</p>
+            <p className="opacity-80">Ingresos</p>
+            <p className="font-semibold text-green-200">+{formatCLP(totalIncome)}</p>
           </div>
           <div>
-            <p className="opacity-80">Gastos del mes</p>
-            <p className="font-semibold text-red-200">-{formatCLP(monthlyData.expenses)}</p>
+            <p className="opacity-80">Gastos</p>
+            <p className="font-semibold text-red-200">-{formatCLP(totalExpenses)}</p>
           </div>
         </div>
       </div>
@@ -1114,33 +825,16 @@ function App() {
           {transactions.map(transaction => (
             <div key={transaction.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
               <div className="flex justify-between items-center">
-                <div className="flex-1">
+                <div>
                   <p className="font-semibold text-gray-800">{transaction.category}</p>
                   <p className="text-gray-600 text-sm">{transaction.description}</p>
                   <p className="text-gray-400 text-xs">{transaction.date}</p>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <p className={`font-bold text-lg ${
-                    transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {transaction.type === 'income' ? '+' : '-'}{formatCLP(transaction.amount)}
-                  </p>
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => {
-                        if (window.confirm('¿Estás seguro de que quieres eliminar esta transacción?')) {
-                          deleteTransaction(transaction.id);
-                        }
-                      }}
-                      className="text-red-500 hover:text-red-700 p-1 rounded transition-colors"
-                      title="Eliminar transacción"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
+                <p className={`font-bold text-lg ${
+                  transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {transaction.type === 'income' ? '+' : '-'}{formatCLP(transaction.amount)}
+                </p>
               </div>
             </div>
           ))}
@@ -1175,8 +869,7 @@ function App() {
               {!['Alimentación', 'Transporte', 'Entretenimiento', 'Salud', 'Educación', 'Hogar', 'Ropa', 'Otros'].includes(category) && (
                 <button
                   onClick={() => deleteCustomCategory('expense', category)}
-                  className="text-red-500 hover:text-red-700 text-lg font-bold ml-2 px-2 py-1 rounded hover:bg-red-100 transition-colors"
-                  title="Eliminar categoría"
+                  className="text-red-500 hover:text-red-700 text-sm"
                 >
                   ×
                 </button>
@@ -1199,8 +892,7 @@ function App() {
               {!['Salario', 'Freelance', 'Inversiones', 'Bonos', 'Otros'].includes(category) && (
                 <button
                   onClick={() => deleteCustomCategory('income', category)}
-                  className="text-green-500 hover:text-green-700 text-lg font-bold ml-2 px-2 py-1 rounded hover:bg-green-100 transition-colors"
-                  title="Eliminar categoría"
+                  className="text-green-500 hover:text-green-700 text-sm"
                 >
                   ×
                 </button>
