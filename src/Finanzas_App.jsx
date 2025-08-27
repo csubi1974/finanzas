@@ -239,38 +239,13 @@ function App() {
 
       if (error) {
         console.error('Error de Supabase:', error);
-        console.log('Usando datos locales temporalmente...');
+        console.log('No se pudo conectar a la base de datos');
         
-        // Usar datos de ejemplo si Supabase falla
-        const sampleData = [
-          {
-            id: 1,
-            type: 'income',
-            amount: 500000,
-            category: 'Salario',
-            description: 'Sueldo mensual',
-            date: newTransaction.date,
-            created_at: new Date().toISOString()
-          },
-          {
-            id: 2,
-            type: 'expense',
-            amount: 50000,
-            category: 'Alimentación',
-            description: 'Supermercado',
-            date: new Date().toISOString().split('T')[0],
-            created_at: new Date().toISOString()
-          }
-        ];
+        // No mostrar datos mock, solo mensaje de error
+        setTransactions([]);
+        setBalance(0);
         
-        setTransactions(sampleData);
-        
-        // Calculate balance
-        const totalIncome = sampleData.filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0);
-        const totalExpenses = sampleData.filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0);
-        setBalance(totalIncome - totalExpenses);
-        
-        setError('Usando datos de ejemplo - Verifica la conexión con Supabase');
+        setError('No se puede conectar a la base de datos. Verifica la configuración de Supabase en las variables de entorno.');
         return;
       }
 
@@ -284,38 +259,13 @@ function App() {
       console.log('Datos cargados exitosamente:', { transacciones: data?.length || 0, balance: totalIncome - totalExpenses });
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      console.log('Usando datos locales por error de conexión...');
+      console.log('No se pudo conectar a la base de datos');
       
-      // Usar datos de ejemplo si hay error de conexión
-      const sampleData = [
-        {
-          id: 1,
-          type: 'income',
-          amount: 500000,
-          category: 'Salario',
-          description: 'Sueldo mensual',
-          date: new Date().toISOString().split('T')[0],
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 2,
-          type: 'expense',
-          amount: 50000,
-          category: 'Alimentación',
-          description: 'Supermercado',
-          date: new Date().toISOString().split('T')[0],
-          created_at: new Date().toISOString()
-        }
-      ];
+      // No mostrar datos mock, solo mensaje de error
+      setTransactions([]);
+      setBalance(0);
       
-      setTransactions(sampleData);
-      
-      // Calculate balance
-      const totalIncome = sampleData.filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0);
-      const totalExpenses = sampleData.filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0);
-      setBalance(totalIncome - totalExpenses);
-      
-      setError(`Usando datos de ejemplo - Error de conexión: ${error.message}`);
+      setError(`No se puede conectar a la base de datos: ${error.message}. Verifica la configuración de Supabase.`);
     }
   };
 
@@ -564,14 +514,14 @@ function App() {
       };
 
       const prompt = `
-        Analiza los siguientes datos financieros y proporciona:
-        1. Un análisis detallado de la situación financiera actual
-        2. 3-5 sugerencias específicas para mejorar las finanzas
-        3. 2-3 objetivos de ahorro realistas basados en el historial
-        4. Identificación de patrones de gasto problemáticos
-        5. Recomendaciones para optimizar el presupuesto
+        Analiza los siguientes datos financieros de esta aplicación y proporciona:
+        1. Un análisis detallado de la situación financiera actual basado en los datos registrados
+        2. 3-5 sugerencias específicas para mejorar las finanzas usando las funcionalidades de la aplicación
+        3. 2-3 objetivos de ahorro realistas que se puedan gestionar con las metas de la aplicación
+        4. Identificación de patrones de gasto problemáticos visibles en las categorías registradas
+        5. Recomendaciones para optimizar el presupuesto aprovechando las estadísticas y gráficos disponibles
 
-        Datos financieros:
+        Datos financieros registrados en la aplicación:
         - Balance actual: $${balance.toLocaleString('es-CL')}
         - Ingresos totales: $${totalIncome.toLocaleString('es-CL')}
         - Gastos totales: $${totalExpenses.toLocaleString('es-CL')}
@@ -580,7 +530,7 @@ function App() {
         - Distribución de gastos por categoría: ${JSON.stringify(stats.expensesByCategory)}
         - Datos mensuales: ${JSON.stringify(stats.monthlyData)}
         
-        Por favor, proporciona un análisis en español, específico y actionable.
+        Enfócate únicamente en cómo usar mejor esta aplicación de finanzas para mejorar el control financiero. No sugieras herramientas externas.
       `;
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -590,7 +540,7 @@ function App() {
           'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-4.1-nano',
           messages: [
             {
               role: 'system',
