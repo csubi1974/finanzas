@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import AuthComponent from './AuthComponent';
 import LoadingSpinner from './LoadingSpinner';
+import ChatComponent from './components/ChatComponent';
+import { useFinancialContext } from './hooks/useFinancialContext.js';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -44,6 +46,12 @@ function App() {
   const [showAIModal, setShowAIModal] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // Estados para el chat con IA
+  const [showChat, setShowChat] = useState(false);
+  
+  // Hook para obtener contexto financiero
+  const { financialContext, isLoading: contextLoading } = useFinancialContext(user);
   const [newTransaction, setNewTransaction] = useState({
     type: 'expense',
     amount: '',
@@ -1701,6 +1709,25 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Botón flotante del chat */}
+      <button
+        onClick={() => setShowChat(true)}
+        className="fixed bottom-6 right-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 z-40"
+        title="Asistente Financiero IA"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      </button>
+
+      {/* Componente del Chat */}
+      <ChatComponent
+        isOpen={showChat}
+        onClose={() => setShowChat(false)}
+        financialContext={financialContext}
+        user={user}
+      />
     </div>
   );
 }

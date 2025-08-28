@@ -13,21 +13,29 @@ ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCAD
 ALTER TABLE savings_goals 
 ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
 
--- 4. Crear constraint único para user_balance.user_id
+-- 4. Agregar columna user_id a la tabla custom_categories
+ALTER TABLE custom_categories 
+ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- 5. Agregar columna user_id a la tabla goal_contributions
+ALTER TABLE goal_contributions 
+ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- 6. Crear constraint único para user_balance.user_id
 ALTER TABLE user_balance 
 DROP CONSTRAINT IF EXISTS user_balance_user_id_key;
 
 ALTER TABLE user_balance 
 ADD CONSTRAINT user_balance_user_id_key UNIQUE (user_id);
 
--- 5. Verificar que las columnas se agregaron correctamente
+-- 7. Verificar que las columnas se agregaron correctamente
 SELECT 
     table_name,
     column_name,
     data_type,
     is_nullable
 FROM information_schema.columns 
-WHERE table_name IN ('transactions', 'user_balance', 'savings_goals', 'custom_categories')
+WHERE table_name IN ('transactions', 'user_balance', 'savings_goals', 'custom_categories', 'goal_contributions')
     AND column_name = 'user_id'
 ORDER BY table_name;
 

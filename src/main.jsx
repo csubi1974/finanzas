@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './Finanzas_App.jsx'
+import App from './Finanzas_App'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
