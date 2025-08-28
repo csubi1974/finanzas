@@ -70,14 +70,7 @@ export const useFinancialContext = (user) => {
 
         if (categoriesError) throw categoriesError;
 
-        // Log de depuración para verificar datos cargados
-        console.log('📊 Datos cargados para usuario:', user.id, {
-          transacciones: transactionsData?.length || 0,
-          balance: balanceData?.balance || 0,
-          metasAhorro: goalsData?.length || 0,
-          categorias: categoriesData?.length || 0,
-          primeraTransaccion: transactionsData?.[0]
-        });
+
 
         // Actualizar estados
         setTransactions(transactionsData || []);

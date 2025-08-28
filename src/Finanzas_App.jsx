@@ -204,10 +204,10 @@ function App() {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      console.log('Iniciando carga de datos...');
+
       await fetchTransactions();
       await fetchCustomCategories();
-      console.log('Carga de datos completada');
+
     } catch (error) {
       console.error('Error loading initial data:', error);
       setError('Error al cargar los datos');
@@ -215,7 +215,7 @@ function App() {
       setTransactions([]);
       setBalance(0);
     } finally {
-      console.log('Finalizando estado de carga');
+
       setLoading(false);
     }
   };
@@ -245,7 +245,7 @@ function App() {
     if (!user) return;
     
     try {
-      console.log('Cargando categorías personalizadas...');
+
       const { data, error } = await supabase
         .from('custom_categories')
         .select('*')
@@ -278,7 +278,7 @@ function App() {
           income: incomeCategories
         });
 
-        console.log('Categorías personalizadas cargadas:', data.length);
+
       }
     } catch (error) {
       console.error('Error fetching custom categories:', error);
@@ -293,10 +293,7 @@ function App() {
     }
     
     try {
-      console.log('Intentando conectar con Supabase...');
-      console.log('URL:', import.meta.env.VITE_SUPABASE_URL);
-      console.log('Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
-      console.log('User ID:', user.id);
+
       
       // Intentar conectar con Supabase filtrando por user_id
       const { data, error } = await supabase
@@ -305,11 +302,11 @@ function App() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      console.log('Respuesta de Supabase:', { data, error });
+
 
       if (error) {
         console.error('Error de Supabase:', error);
-        console.log('No se pudo conectar a la base de datos');
+
         
         // No mostrar datos mock, solo mensaje de error
         setTransactions([]);
@@ -326,10 +323,10 @@ function App() {
       const totalExpenses = (data || []).filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0);
       setBalance(totalIncome - totalExpenses);
       
-      console.log('Datos cargados exitosamente:', { transacciones: data?.length || 0, balance: totalIncome - totalExpenses });
+
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      console.log('No se pudo conectar a la base de datos');
+
       
       // No mostrar datos mock, solo mensaje de error
       setTransactions([]);
@@ -475,7 +472,6 @@ function App() {
       setNewCategoryName('');
       setShowCategoryModal(false);
       setError(null);
-      console.log('Categoría guardada exitosamente:', data[0]);
     } catch (error) {
       console.error('Error adding custom category:', error);
       setError('Error al agregar la categoría');
@@ -527,7 +523,6 @@ function App() {
         [type]: prev[type].filter(cat => cat !== categoryName)
       }));
       setError(null);
-      console.log('Categoría eliminada exitosamente:', categoryName);
     } catch (error) {
       console.error('Error deleting custom category:', error);
       setError('Error al eliminar la categoría');
@@ -574,7 +569,6 @@ function App() {
       setNewCategoryName('');
       setShowAddCategoryInModal(false);
       setError(null);
-      console.log('Categoría rápida guardada exitosamente:', data[0]);
     } catch (error) {
       console.error('Error adding quick category:', error);
       setError('Error al agregar la categoría');
