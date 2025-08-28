@@ -1,0 +1,27 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="64" fill="#3B82F6"/>
+  <circle cx="256" cy="256" r="180" fill="white" fill-opacity="0.1"/>
+  
+  <!-- Dollar sign symbol -->
+  <g transform="translate(256, 256)">
+    <!-- Dollar sign background circle -->
+    <circle cx="0" cy="0" r="120" fill="white" fill-opacity="0.2"/>
+    
+    <!-- Dollar sign -->
+    <path d="M-6 -90 L-6 -60 C-36 -60 -60 -36 -60 -6 C-60 24 -36 48 -6 48 L6 48 C24 48 36 60 36 78 C36 96 24 108 6 108 L-6 108 L-6 138 M6 -90 L6 -60 C36 -60 60 -36 60 -6 C60 24 36 48 6 48 L-6 48 C-24 48 -36 60 -36 78 C-36 96 -24 108 -6 108 L6 108 L6 138" stroke="white" stroke-width="12" fill="none" stroke-linecap="round"/>
+    
+    <!-- Vertical line of dollar sign -->
+    <line x1="0" y1="-105" x2="0" y2="120" stroke="white" stroke-width="12" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Decorative elements -->
+  <rect x="160" y="380" width="192" height="12" rx="6" fill="white" fill-opacity="0.8"/>
+  <rect x="180" y="400" width="152" height="8" rx="4" fill="white" fill-opacity="0.6"/>
+  <rect x="200" y="416" width="112" height="6" rx="3" fill="white" fill-opacity="0.4"/>
+  
+  <!-- Corner decorative circles -->
+  <circle cx="128" cy="128" r="16" fill="white" fill-opacity="0.3"/>
+  <circle cx="384" cy="128" r="12" fill="white" fill-opacity="0.2"/>
+  <circle cx="384" cy="384" r="20" fill="white" fill-opacity="0.25"/>
+  <circle cx="128" cy="384" r="14" fill="white" fill-opacity="0.15"/>
+</svg>

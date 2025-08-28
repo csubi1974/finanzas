@@ -1,0 +1,21 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" rx="24" fill="#3B82F6"/>
+  <circle cx="96" cy="96" r="64" fill="white" fill-opacity="0.1"/>
+  
+  <!-- Dollar sign symbol -->
+  <g transform="translate(96, 96)">
+    <!-- Dollar sign background circle -->
+    <circle cx="0" cy="0" r="40" fill="white" fill-opacity="0.2"/>
+    
+    <!-- Dollar sign -->
+    <path d="M-2 -30 L-2 -20 C-12 -20 -20 -12 -20 -2 C-20 8 -12 16 -2 16 L2 16 C8 16 12 20 12 26 C12 32 8 36 2 36 L-2 36 L-2 46 M2 -30 L2 -20 C12 -20 20 -12 20 -2 C20 8 12 16 2 16 L-2 16 C-8 16 -12 20 -12 26 C-12 32 -8 36 -2 36 L2 36 L2 46" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+    
+    <!-- Vertical line of dollar sign -->
+    <line x1="0" y1="-35" x2="0" y2="40" stroke="white" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Decorative elements -->
+  <rect x="64" y="140" width="64" height="4" rx="2" fill="white" fill-opacity="0.8"/>
+  <rect x="72" y="148" width="48" height="3" rx="1.5" fill="white" fill-opacity="0.6"/>
+  <rect x="80" y="155" width="32" height="2" rx="1" fill="white" fill-opacity="0.4"/>
+</svg>
