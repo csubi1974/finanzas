@@ -185,10 +185,10 @@ export class FinancialChatService {
 
       // Llamar a OpenAI
       const completion = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4.1-nano',
         messages: messages,
         max_tokens: 500,
-        temperature: 0.7,
+        temperature: 0.5,
         presence_penalty: 0.1,
         frequency_penalty: 0.1
       });
@@ -237,6 +237,26 @@ export class FinancialChatService {
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
     
+    // Obtener información de fecha actual
+    const currentDate = new Date();
+    const dayOfMonth = currentDate.getDate();
+    const monthName = currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+    
+    // Determinar período del mes para contexto
+    let monthPeriod = '';
+    let periodAdvice = '';
+    
+    if (dayOfMonth <= 10) {
+      monthPeriod = 'INICIO DE MES';
+      periodAdvice = '⚠️ IMPORTANTE: Estamos a inicio de mes. Es probable que aún no hayas realizado todos tus pagos fijos (renta, servicios, seguros). El saldo actual NO refleja tu ahorro real disponible.';
+    } else if (dayOfMonth <= 20) {
+      monthPeriod = 'MEDIADOS DE MES';
+      periodAdvice = '📊 CONTEXTO: Estamos a mediados de mes. Algunos gastos fijos ya se han realizado, pero considera que aún pueden quedar pagos pendientes.';
+    } else {
+      monthPeriod = 'FIN DE MES';
+      periodAdvice = '✅ CONTEXTO: Estamos cerca del fin de mes. La mayoría de gastos fijos ya se han realizado, por lo que el saldo actual es más representativo de tu capacidad de ahorro real.';
+    }
+    
     return `Eres un asistente financiero personal especializado EXCLUSIVAMENTE en ayudar con finanzas personales, economía y el uso de esta aplicación financiera.
 
 🚫 RESTRICCIONES IMPORTANTES:
@@ -248,6 +268,11 @@ export class FinancialChatService {
 CONTEXTO FINANCIERO DEL USUARIO:
 - Balance actual: $${balance.toLocaleString()}
 - Total de transacciones registradas: ${transactionCount}
+
+CONTEXTO TEMPORAL ACTUAL:
+- Fecha de consulta: ${currentDate.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+- Día del mes: ${dayOfMonth} (${monthPeriod})
+- ${periodAdvice}
 
 RESUMEN DE GASTOS E INGRESOS:
 - Gastos del mes actual: $${monthlyExpenses.toLocaleString()}
@@ -281,6 +306,10 @@ REGLAS CRÍTICAS PARA EVITAR ERRORES:
 6. 🚫 NUNCA inventes o calcules cifras que no estén en el contexto
 7. ✅ Si no estás seguro de un cálculo, pide aclaración al usuario
 8. 🚫 NUNCA hables de temas que NO sean finanzas, economía o uso de la aplicación
+9. 📅 CONSIDERA SIEMPRE EL CONTEXTO TEMPORAL:
+   - Si es INICIO DE MES: Sé conservador con recomendaciones de ahorro, advierte sobre gastos fijos pendientes
+   - Si es MEDIADOS DE MES: Proporciona recomendaciones moderadas, considera gastos pendientes
+   - Si es FIN DE MES: El saldo es más representativo, recomendaciones de ahorro más precisas
 
 INSTRUCCIONES ADICIONALES:
 - Responde en español de manera amigable y profesional
@@ -291,6 +320,10 @@ INSTRUCCIONES ADICIONALES:
 - Mantén las respuestas concisas pero informativas
 - Siempre enfócate en educación financiera y mejores prácticas
 - REDIRIGE cualquier tema no financiero hacia finanzas personales
+- AJUSTA tus recomendaciones según el contexto temporal:
+  * INICIO DE MES: "Considera que aún tienes gastos fijos pendientes antes de destinar dinero al ahorro"
+  * MEDIADOS DE MES: "Ten en cuenta que pueden quedar algunos gastos por realizar este mes"
+  * FIN DE MES: "Tu saldo actual es más representativo de tu capacidad real de ahorro"
 
 TEMAS PERMITIDOS ÚNICAMENTE:
 - Análisis de gastos e ingresos (especificando períodos exactos)
@@ -305,7 +338,7 @@ TEMAS PERMITIDOS ÚNICAMENTE:
 - Educación financiera
 - Economía personal y familiar
 
-Recuerda: NUNCA comprometas la precisión de los datos financieros y NUNCA salgas del ámbito financiero/económico.`;
+Recuerda: NUNCA comprometas la precisión de los datos financieros, NUNCA salgas del ámbito financiero/económico, y SIEMPRE considera el contexto temporal (${monthPeriod}) al hacer recomendaciones de ahorro y análisis financiero.`;
   }
 
   /**

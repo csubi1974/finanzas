@@ -585,6 +585,26 @@ function App() {
       const stats = getStatisticsData();
       const recentTransactions = transactions.slice(0, 20);
       
+      // Obtener información de fecha actual para contexto temporal
+      const currentDate = new Date();
+      const dayOfMonth = currentDate.getDate();
+      const monthName = currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+      
+      // Determinar período del mes para contexto
+      let monthPeriod = '';
+      let periodAdvice = '';
+      
+      if (dayOfMonth <= 10) {
+        monthPeriod = 'INICIO DE MES';
+        periodAdvice = '⚠️ IMPORTANTE: Estamos a inicio de mes. Es probable que aún no hayas realizado todos tus pagos fijos (renta, servicios, seguros). El saldo actual NO refleja tu ahorro real disponible.';
+      } else if (dayOfMonth <= 20) {
+        monthPeriod = 'MEDIADOS DE MES';
+        periodAdvice = '📊 CONTEXTO: Estamos a mediados de mes. Algunos gastos fijos ya se han realizado, pero considera que aún pueden quedar pagos pendientes.';
+      } else {
+        monthPeriod = 'FIN DE MES';
+        periodAdvice = '✅ CONTEXTO: Estamos cerca del fin de mes. La mayoría de gastos fijos ya se han realizado, por lo que el saldo actual es más representativo de tu capacidad de ahorro real.';
+      }
+      
       const financialData = {
         balance: balance,
         totalIncome: totalIncome,
@@ -598,7 +618,12 @@ function App() {
           category: t.category,
           amount: t.amount,
           date: t.date
-        }))
+        })),
+        // Contexto temporal
+        currentDate: currentDate.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+        dayOfMonth: dayOfMonth,
+        monthPeriod: monthPeriod,
+        periodAdvice: periodAdvice
       };
 
       const prompt = `
@@ -609,6 +634,11 @@ function App() {
         4. Identificación de patrones de gasto problemáticos visibles en las categorías registradas
         5. Recomendaciones para optimizar el presupuesto aprovechando las estadísticas y gráficos disponibles
 
+        CONTEXTO TEMPORAL ACTUAL:
+        - Fecha de análisis: ${financialData.currentDate}
+        - Día del mes: ${financialData.dayOfMonth} (${financialData.monthPeriod})
+        - ${financialData.periodAdvice}
+
         Datos financieros registrados en la aplicación:
         - Balance actual: $${balance.toLocaleString('es-CL')}
         - Ingresos totales: $${totalIncome.toLocaleString('es-CL')}
@@ -618,7 +648,13 @@ function App() {
         - Distribución de gastos por categoría: ${JSON.stringify(stats.expensesByCategory)}
         - Datos mensuales: ${JSON.stringify(stats.monthlyData)}
         
+        CONSIDERACIONES TEMPORALES IMPORTANTES:
+        - Si es INICIO DE MES: Sé conservador con recomendaciones de ahorro, advierte sobre gastos fijos pendientes (renta, servicios, seguros)
+        - Si es MEDIADOS DE MES: Proporciona recomendaciones moderadas, considera que pueden quedar gastos pendientes
+        - Si es FIN DE MES: El saldo es más representativo de la capacidad real de ahorro, recomendaciones más precisas
+        
         Enfócate únicamente en cómo usar mejor esta aplicación de finanzas para mejorar el control financiero. No sugieras herramientas externas.
+        SIEMPRE considera el contexto temporal (${financialData.monthPeriod}) al hacer recomendaciones de ahorro y análisis financiero.
       `;
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
