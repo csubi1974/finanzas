@@ -59,7 +59,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!manifest\.json|sw\.js|icon-.*\.(svg|png|ico)).*)$",
+      "source": "/((?!manifest\\.json|sw\\.js|icon-.*\\.(svg|png|ico)).*)$",
       "destination": "/index.html"
     }
   ]
