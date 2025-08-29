@@ -50,7 +50,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|xml|txt)).*)",
+      "source": "/((?!api/)(?!.*\\.).*)",
       "destination": "/index.html"
     }
   ]
