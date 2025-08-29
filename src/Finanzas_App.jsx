@@ -668,7 +668,7 @@ function App() {
           messages: [
             {
               role: 'system',
-              content: 'Eres un asesor financiero experto que analiza datos financieros personales y proporciona consejos prácticos y específicos en español.'
+              content: 'Eres un asesor financiero experto que analiza datos financieros personales y proporciona consejos prácticos y específicos en español. Puedes asesorar sobre finanzas personales, inversiones, mercado de valores chileno, acciones, bonos, fondos mutuos, estrategias de inversión y diversificación de portafolio.'
             },
             {
               role: 'user',

@@ -46,20 +46,11 @@
           "value": "public, max-age=0, must-revalidate"
         }
       ]
-    },
-    {
-      "source": "/(icon-.*\\.(svg|png|ico))",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
     }
   ],
   "rewrites": [
     {
-      "source": "/((?!manifest\\.json|sw\\.js|icon-.*\\.(svg|png|ico)).*)$",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
